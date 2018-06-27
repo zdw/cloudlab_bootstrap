@@ -71,16 +71,36 @@ function cloudlab_setup() {
 echo "Installing prereqs..."
 sudo apt-get update
 sudo apt-get -y install apt-transport-https build-essential curl git python-dev \
-                        python-netaddr python-pip software-properties-common sshpass \
+                        python-pip software-properties-common sshpass \
                         qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server
-sudo pip install gitpython graphviz "Jinja2>=2.9" virtualenv
 
-if [ ! -x "/usr/bin/ansible" ]
+echo "Install ansible and python modules"
+pip install gitpython graphviz "Jinja2>=2.9" virtualenv ansible ansible-modules-hashivault netaddr
+
+
+if [ ! -x "/usr/local/bin/repo" ]
 then
-  echo "Installing Ansible..."
-  sudo apt-add-repository -y ppa:ansible/ansible  # latest supported version
-  sudo apt-get update
-  sudo apt-get install -y ansible
+  echo "Installing repo..."
+
+  REPO_SHA256SUM="394d93ac7261d59db58afa49bb5f88386fea8518792491ee3db8baab49c3ecda"
+  curl -o /tmp/repo 'https://gerrit.opencord.org/gitweb?p=repo.git;a=blob_plain;f=repo;hb=refs/heads/stable'
+  echo "$REPO_SHA256SUM  /tmp/repo" | sha256sum -c -
+  sudo cp /tmp/repo /usr/local/bin/repo
+  sudo chmod a+x /usr/local/bin/repo
+fi
+
+
+if [ ! -d "cord" ]
+then
+  # make sure we can find gerrit.opencord.org as DNS failures will fail the build
+  dig +short gerrit.opencord.org || (echo "ERROR: gerrit.opencord.org can't be looked up in DNS" && exit 1)
+
+  echo "Downloading cord with repo..."
+  mkdir -p cord
+  pushd cord
+  repo init -u https://gerrit.opencord.org/manifest -b master
+  repo sync
+  popd
 fi
 
 if [ ! -x "/usr/bin/vagrant" ]
@@ -113,23 +133,14 @@ if [ ! -e "${HOME}/.gitconfig" ]
     git config --global color.ui false
 fi
 
-if [ ! -d "automation-tools" ]
-then
-  # make sure we can find gerrit.opencord.org as DNS failures will fail the build
-  dig +short gerrit.opencord.org || (echo "ERROR: gerrit.opencord.org can't be looked up in DNS" && exit 1)
-
-  echo "Downloading automation-tools..."
-  git clone https://gerrit.opencord.org/automation-tools.git automation-tools
-
-fi
 
 if [ ! -x "/usr/local/bin/kubectl" ]
 then
   echo "Installing kubectl..."
 
   # install kubectl
-  KUBECTL_VERSION="1.9.5"
-  KUBECTL_SHA256SUM="9c67b6e80e9dd3880511c7d912c5a01399c1d74aaf4d71989c7d5a4f2534bcd5"
+  KUBECTL_VERSION="1.10.5"
+  KUBECTL_SHA256SUM="a9e7f82e516aa8a652bc485620483ea964eb940787cabf890d7eab96eaac294d"
   curl -L -o /tmp/kubectl "https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
   echo "$KUBECTL_SHA256SUM  /tmp/kubectl" | sha256sum -c -
   sudo cp /tmp/kubectl /usr/local/bin/kubectl
@@ -143,8 +154,8 @@ then
   echo "Installing helm..."
 
   # install helm
-  HELM_VERSION="2.8.2"
-  HELM_SHA256SUM="614b5ac79de4336b37c9b26d528c6f2b94ee6ccacb94b0f4b8d9583a8dd122d3"
+  HELM_VERSION="2.9.1"
+  HELM_SHA256SUM="56ae2d5d08c68d6e7400d462d6ed10c929effac929fedce18d2636a9b4e166ba"
   HELM_PLATFORM="linux-amd64"
   curl -L -o /tmp/helm.tgz "https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION}-${HELM_PLATFORM}.tar.gz"
   echo "$HELM_SHA256SUM  /tmp/helm.tgz" | sha256sum -c -
@@ -156,6 +167,20 @@ then
   popd
 fi
 
+if [ ! -x "/usr/local/bin/minikube" ]
+then
+  echo "Installing minikube..."
 
-echo "DONE! Docs: automation-tools/kubespray-installer/test/README.md"
+  MINIKUBE_VERSION="0.28.0"
+  MINIKUBE_DEB_VERSION="$(echo ${MINIKUBE_VERSION} | sed -n 's/\(.*\)\.\(.*\)/\1-\2/p')"
+  MINIKUBE_SHA256SUM="5308f955f802a81cdb624fa8f6f5aeead642d203f25efd706cc55f04481bf7a3"
+  curl -L -o /tmp/minikube.deb "https://storage.googleapis.com/minikube/releases/v${MINIKUBE_VERSION}/minikube_${MINIKUBE_DEB_VERSION}.deb"
+  echo "$MINIKUBE_SHA256SUM  /tmp/minikube.deb" | sha256sum -c -
+  pushd /tmp
+  dpkg -i minikube.deb
+  rm -f minikube.deb
+fi
+
+
+echo "DONE!"
 
