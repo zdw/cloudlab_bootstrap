@@ -74,9 +74,35 @@ sudo apt-get -y install apt-transport-https build-essential curl git python-dev 
                         python-pip software-properties-common sshpass \
                         qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server
 
-echo "Install ansible and python modules"
-pip install gitpython graphviz "Jinja2>=2.9" virtualenv ansible ansible-modules-hashivault netaddr
 
+# this breaks things
+
+echo "Install ansible and python modules"
+sudo apt-get --auto-remove --yes remove python-openssl
+pip install gitpython graphviz docker "Jinja2>=2.9" virtualenv ansible ansible-modules-hashivault netaddr PyOpenSSL
+
+
+if [ ! -x "/usr/bin/docker" ]
+then
+  # set up docker
+  echo "Installing docker..."
+  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 0EBFCD88
+  sudo add-apt-repository \
+        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+         $(lsb_release -cs) \
+         stable"
+
+  sudo apt-get update
+  sudo apt-get install -y "docker-ce=17.06*"
+fi
+
+if [ ! -e "${HOME}/.gitconfig" ]
+then
+  echo "No ${HOME}/.gitconfig, setting testing defaults..."
+  git config --global user.name 'Test User'
+  git config --global user.email 'test@null.com'
+  git config --global color.ui false
+fi
 
 if [ ! -x "/usr/local/bin/repo" ]
 then
@@ -90,14 +116,15 @@ then
 fi
 
 
-if [ ! -d "cord" ]
+if [ ! -d "${HOME}/cord" ]
 then
   # make sure we can find gerrit.opencord.org as DNS failures will fail the build
   dig +short gerrit.opencord.org || (echo "ERROR: gerrit.opencord.org can't be looked up in DNS" && exit 1)
 
   echo "Downloading cord with repo..."
+  pushd ${HOME}
   mkdir -p cord
-  pushd cord
+  cd cord
   repo init -u https://gerrit.opencord.org/manifest -b master
   repo sync
   popd
@@ -124,14 +151,6 @@ echo "Obtaining libvirt image of Ubuntu"
 UBUNTU_VERSION=${UBUNTU_VERSION:-bento/ubuntu-16.04}
 vagrant box list | grep "${UBUNTU_VERSION}" | grep virtualbox || vagrant box add --provider virtualbox "${UBUNTU_VERSION}"
 vagrant box list | grep "${UBUNTU_VERSION}" | grep libvirt || vagrant mutate "${UBUNTU_VERSION}" libvirt --input-provider virtualbox
-
-if [ ! -e "${HOME}/.gitconfig" ]
-  then
-    echo "No ${HOME}/.gitconfig, setting testing defaults..."
-    git config --global user.name 'Test User'
-    git config --global user.email 'test@null.com'
-    git config --global color.ui false
-fi
 
 
 if [ ! -x "/usr/local/bin/kubectl" ]
@@ -165,6 +184,9 @@ then
   sudo chmod a+x /usr/local/bin/helm
   rm -rf helm.tgz ${HELM_PLATFORM}
   popd
+
+  helm init --client-only
+  helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
 fi
 
 if [ ! -x "/usr/local/bin/minikube" ]
@@ -177,7 +199,7 @@ then
   curl -L -o /tmp/minikube.deb "https://storage.googleapis.com/minikube/releases/v${MINIKUBE_VERSION}/minikube_${MINIKUBE_DEB_VERSION}.deb"
   echo "$MINIKUBE_SHA256SUM  /tmp/minikube.deb" | sha256sum -c -
   pushd /tmp
-  dpkg -i minikube.deb
+  sudo dpkg -i minikube.deb
   rm -f minikube.deb
 fi
 
