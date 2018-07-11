@@ -65,6 +65,8 @@ function cloudlab_setup() {
   if [ ! -e /var/lib/libvirt/images ]
   then
     sudo ln -s /mnt/extra/libvirt_images /var/lib/libvirt/images
+    sudo ln -s /mnt/extra/docker /var/lib/docker
+    sudo ln -s /mnt/extra/kubelet /var/lib/kubelet
   fi
 }
 
@@ -72,7 +74,7 @@ echo "Installing prereqs..."
 sudo apt-get update
 sudo apt-get -y install apt-transport-https build-essential curl git python-dev \
                         python-pip software-properties-common sshpass \
-                        qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server
+                        qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server socat
 
 
 # this breaks things
