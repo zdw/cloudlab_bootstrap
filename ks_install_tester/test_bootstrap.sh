@@ -60,7 +60,7 @@ function cloudlab_setup() {
 
   # replace /var/lib/libvirt/images with a symlink
   [ -d /var/lib/libvirt/images/ ] && [ ! -h /var/lib/libvirt/images ] && sudo rmdir /var/lib/libvirt/images
-  sudo mkdir -p /mnt/extra/libvirt_images
+  sudo mkdir -p /mnt/extra/libvirt_images /mnt/extra/docker /mnt/extra/kubelet
 
   if [ ! -e /var/lib/libvirt/images ]
   then
