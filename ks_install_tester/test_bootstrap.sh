@@ -73,7 +73,7 @@ function cloudlab_setup() {
 echo "Installing prereqs..."
 sudo apt-get update
 sudo apt-get -y install apt-transport-https build-essential curl git python-dev \
-                        python-pip software-properties-common sshpass flake8 yamllint \
+                        python-pip software-properties-common sshpass \
                         qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server socat
 
 
@@ -81,7 +81,8 @@ sudo apt-get -y install apt-transport-https build-essential curl git python-dev 
 
 echo "Install ansible and python modules"
 sudo apt-get --auto-remove --yes remove python-openssl
-pip install gitpython graphviz docker "Jinja2>=2.9" virtualenv ansible ansible-modules-hashivault netaddr PyOpenSSL
+pip install gitpython graphviz docker "Jinja2>=2.9" virtualenv ansible \
+            ansible-modules-hashivault netaddr PyOpenSSL flake8 yamllint
 
 
 if [ ! -x "/usr/bin/docker" ]
