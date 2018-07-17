@@ -6,7 +6,7 @@ These scripts allow you to test the kubespray installer on a single machine.
 
 Requires an Ubuntu 16.04 machine, with a user with sudo enabled. Works on cloudlab.
 
-Copy the `test_boostrap.sh` script onto the target machine and run it.
+Copy the `test_bootstrap.sh` script onto the target machine and run it.
 
 ## Bring up VM's
 

@@ -73,7 +73,7 @@ function cloudlab_setup() {
 echo "Installing prereqs..."
 sudo apt-get update
 sudo apt-get -y install apt-transport-https build-essential curl git python-dev \
-                        python-pip software-properties-common sshpass \
+                        python-pip software-properties-common sshpass flake8 yamllint \
                         qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server socat
 
 
