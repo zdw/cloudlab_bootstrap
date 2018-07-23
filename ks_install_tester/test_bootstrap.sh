@@ -77,13 +77,14 @@ sudo apt-get -y install apt-transport-https build-essential curl git python-dev 
                         qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server socat
 
 
-# this breaks things
-
 echo "Install ansible and python modules"
+# python-openssl breaks things if installed, remove it
 sudo apt-get --auto-remove --yes remove python-openssl
 pip install gitpython graphviz docker "Jinja2>=2.9" virtualenv ansible \
             ansible-modules-hashivault netaddr PyOpenSSL flake8 yamllint
 
+# create mounts/directories before installing docker
+cloudlab_setup
 
 if [ ! -x "/usr/bin/docker" ]
 then
@@ -143,7 +144,6 @@ then
   sudo dpkg -i /tmp/vagrant.deb
 fi
 
-cloudlab_setup
 
 echo "Installing vagrant plugins if needed..."
 VAGRANT_LIBVIRT_VERSION="0.0.40"
