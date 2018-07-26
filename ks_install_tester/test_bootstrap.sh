@@ -51,7 +51,7 @@ function cloudlab_setup() {
     elif [ -e /usr/testbed/bin/mkextrafs ]  # if on Clemson/Wisconsin Cloudlab
     then
       # Sometimes this command fails on the first try
-      sudo /usr/testbed/bin/mkextrafs -r /dev/sdb -qf "/mnt/extra/" || sudo /usr/testbed/bin/mkextrafs -r /dev/sdb -qf "/mnt/extra/"
+      sudo /usr/testbed/bin/mkextrafs -s 1 -r /dev/sdb -qf "/mnt/extra/" || sudo /usr/testbed/bin/mkextrafs -s 1 -r /dev/sdb -qf "/mnt/extra/"
 
       # Check that the mount succeeded (sometimes mkextrafs succeeds but device not mounted)
       mount | grep sdb || (echo "ERROR: mkextrafs failed, exiting!" && exit 1)
