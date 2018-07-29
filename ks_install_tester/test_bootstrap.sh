@@ -119,7 +119,6 @@ then
   sudo chmod a+x /usr/local/bin/repo
 fi
 
-
 if [ ! -d "${HOME}/cord" ]
 then
   # make sure we can find gerrit.opencord.org as DNS failures will fail the build
@@ -130,6 +129,20 @@ then
   mkdir -p cord
   cd cord
   repo init -u https://gerrit.opencord.org/manifest -b master
+  repo sync
+  popd
+fi
+
+if [ ! -d "${HOME}/seba" ]
+then
+  # make sure we can find gerrit.opencord.org as DNS failures will fail the build
+  dig +short gerrit.opencord.org || (echo "ERROR: gerrit.opencord.org can't be looked up in DNS" && exit 1)
+
+  echo "Downloading seba with repo..."
+  pushd ${HOME}
+  mkdir -p seba
+  cd seba
+  repo init -u https://gerrit.opencord.org/seba-manifest -b master
   repo sync
   popd
 fi
