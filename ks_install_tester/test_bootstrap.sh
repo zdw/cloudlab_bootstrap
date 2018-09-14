@@ -151,8 +151,8 @@ if [ ! -x "/usr/bin/vagrant" ]
 then
   echo "Installing vagrant and associated tools..."
 
-  VAGRANT_VERSION="2.1.4"
-  VAGRANT_SHA256SUM="9aa9243027e19daea443abad0d9c7b121deb0502c0e97306497b1fc3112bc167"  # version 2.1.4
+  VAGRANT_VERSION="2.1.5"
+  VAGRANT_SHA256SUM="458b1804b61443cc39ce1fe9ef9aca53c403f25c36f98d0f15e1b284f2bddb65"  # version 2.1.5
   curl -o /tmp/vagrant.deb https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb
   echo "$VAGRANT_SHA256SUM  /tmp/vagrant.deb" | sha256sum -c -
   sudo dpkg -i /tmp/vagrant.deb
