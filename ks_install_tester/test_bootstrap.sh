@@ -220,5 +220,22 @@ then
 fi
 
 
+if [ ! -x "/usr/local/bin/crictl" ]
+then
+  echo "Installing crictl..."
+
+  CRICTL_VERSION="1.11.1"
+  CRICTL_SHA256SUM="ccf83574556793ceb01717dc91c66b70f183c60c2bbec70283939aae8fdef768"
+  CRICTL_PLATFORM="linux-amd64"
+  curl -L -o /tmp/crictl.tgz "https://github.com/kubernetes-sigs/cri-tools/releases/download/v${CRICTL_VERSION}/crictl-v${CRICTL_VERSION}-${CRICTL_PLATFORM}.tar.gz"
+  echo "$CRICTL_SHA256SUM  /tmp/crictl.tgz" | sha256sum -c -
+  pushd /tmp
+  tar -xzvf crictl.tgz
+  sudo cp crictl /usr/local/bin/crictl
+  rm -rf crictl.tgz
+  popd
+fi
+
+
 echo "DONE!"
 
