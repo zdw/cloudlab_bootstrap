@@ -58,16 +58,15 @@ function cloudlab_setup() {
     fi
   fi
 
-  # replace /var/lib/libvirt/images with a symlink
-  [ -d /var/lib/libvirt/images/ ] && [ ! -h /var/lib/libvirt/images ] && sudo rmdir /var/lib/libvirt/images
-  sudo mkdir -p /mnt/extra/libvirt_images /mnt/extra/docker /mnt/extra/kubelet
-
-  if [ ! -e /var/lib/libvirt/images ]
-  then
-    sudo ln -s /mnt/extra/libvirt_images /var/lib/libvirt/images
-    sudo ln -s /mnt/extra/docker /var/lib/docker
-    sudo ln -s /mnt/extra/kubelet /var/lib/kubelet
-  fi
+  for DIR in docker kubelet openstack-helm nova
+  do
+      sudo mkdir -p /mnt/extra/$DIR
+      sudo chmod -R a+rwx /mnt/extra/$DIR
+      if [ ! -e /var/lib/$DIR ]
+      then
+          sudo ln -s /mnt/extra/$DIR /var/lib/$DIR
+      fi
+  done
 }
 
 echo "Installing prereqs..."
@@ -97,7 +96,7 @@ then
          stable"
 
   sudo apt-get update
-  sudo apt-get install -y "docker-ce=17.06*"
+  sudo apt-get install -y "docker-ce=17.03*"
 fi
 
 if [ ! -e "${HOME}/.gitconfig" ]
@@ -125,7 +124,7 @@ then
   dig +short gerrit.opencord.org || (echo "ERROR: gerrit.opencord.org can't be looked up in DNS" && exit 1)
 
   echo "Downloading cord with repo..."
-  pushd ${HOME}
+  pushd "${HOME}"
   mkdir -p cord
   cd cord
   repo init -u https://gerrit.opencord.org/manifest -b master
@@ -133,56 +132,49 @@ then
   popd
 fi
 
-if [ ! -d "${HOME}/seba" ]
+if [ ! -x "/usr/bin/kubeadm" ]
 then
-  # make sure we can find gerrit.opencord.org as DNS failures will fail the build
-  dig +short gerrit.opencord.org || (echo "ERROR: gerrit.opencord.org can't be looked up in DNS" && exit 1)
 
-  echo "Downloading seba with repo..."
-  pushd ${HOME}
-  mkdir -p seba
-  cd seba
-  repo init -u https://gerrit.opencord.org/seba-manifest -b master
-  repo sync
-  popd
+  cat << EOF | base64 -d > /tmp/k8s-apt-key.gpg
+mQENBFUd6rIBCAD6mhKRHDn3UrCeLDp7U5IE7AhhrOCPpqGF7mfTemZYHf/5JdjxcOxoSFlK
+7zwmFr3lVqJ+tJ9L1wd1K6P7RrtaNwCiZyeNPf/Y86AJ5NJwBe0VD0xHTXzPNTqRSByVYtdN
+94NoltXUYFAAPZYQls0x0nUD1hLMlOlC2HdTPrD1PMCnYq/NuL/Vk8sWrcUt4DIS+0RDQ8tK
+Ke5PSV0+PnmaJvdF5CKawhh0qGTklS2MXTyKFoqjXgYDfY2EodI9ogT/LGr9Lm/+u4OFPvmN
+9VN6UG+s0DgJjWvpbmuHL/ZIRwMEn/tpuneaLTO7h1dCrXC849PiJ8wSkGzBnuJQUbXnABEB
+AAG0QEdvb2dsZSBDbG91ZCBQYWNrYWdlcyBBdXRvbWF0aWMgU2lnbmluZyBLZXkgPGdjLXRl
+YW1AZ29vZ2xlLmNvbT6JAT4EEwECACgFAlUd6rICGy8FCQWjmoAGCwkIBwMCBhUIAgkKCwQW
+AgMBAh4BAheAAAoJEDdGwginMXsPcLcIAKi2yNhJMbu4zWQ2tM/rJFovazcY28MF2rDWGOnc
+9giHXOH0/BoMBcd8rw0lgjmOosBdM2JT0HWZIxC/Gdt7NSRA0WOlJe04u82/o3OHWDgTdm9M
+S42noSP0mvNzNALBbQnlZHU0kvt3sV1YsnrxljoIuvxKWLLwren/GVshFLPwONjw3f9Fan6G
+WxJyn/dkX3OSUGaduzcygw51vksBQiUZLCD2Tlxyr9NvkZYTqiaWW78L6regvATsLc9L/dQU
+iSMQZIK6NglmHE+cuSaoK0H4ruNKeTiQUw/EGFaLecay6Qy/s3Hk7K0QLd+gl0hZ1w1VzIeX
+Lo2BRlqnjOYFX4CwAgADmQENBFrBaNsBCADrF18KCbsZlo4NjAvVecTBCnp6WcBQJ5oSh7+E
+98jX9YznUCrNrgmeCcCMUvTDRDxfTaDJybaHugfba43nqhkbNpJ47YXsIa+YL6eEE9emSmQt
+jrSWIiY+2YJYwsDgsgckF3duqkb02OdBQlh6IbHPoXB6H//b1PgZYsomB+841XW1LSJPYlYb
+IrWfwDfQvtkFQI90r6NknVTQlpqQh5GLNWNYqRNrGQPmsB+NrUYrkl1nUt1LRGu+rCe4bSaS
+mNbwKMQKkROE4kTiB72DPk7zH4Lm0uo0YFFWG4qsMIuqEihJ/9KNX8GYBr+tWgyLooLlsdK3
+l+4dVqd8cjkJM1ExABEBAAG0QEdvb2dsZSBDbG91ZCBQYWNrYWdlcyBBdXRvbWF0aWMgU2ln
+bmluZyBLZXkgPGdjLXRlYW1AZ29vZ2xlLmNvbT6JAT4EEwECACgFAlrBaNsCGy8FCQWjmoAG
+CwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEGoDCyG6B/T78e8H/1WH2LN/nVNhm5TS1VYJ
+G8B+IW8zS4BqyozxC9iJAJqZIVHXl8g8a/Hus8RfXR7cnYHcg8sjSaJfQhqO9RbKnffiuQgG
+rqwQxuC2jBa6M/QKzejTeP0Mgi67pyrLJNWrFI71RhritQZmzTZ2PoWxfv6b+Tv5v0rPaG+u
+t1J47pn+kYgtUaKdsJz1umi6HzK6AacDf0C0CksJdKG7MOWsZcB4xeOxJYuy6NuO6KcdEz8/
+XyEUjIuIOlhYTd0hH8E/SEBbXXft7/VBQC5wNq40izPi+6WFK/e1O42DIpzQ749ogYQ1eode
+xPNhLzekKR3XhGrNXJ95r5KO10VrsLFNd8KwAgAD
+EOF
+
+  sudo apt-key add /tmp/k8s-apt-key.gpg
+
+  echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+  sudo apt-get update
+
+  sudo apt-get -y install \
+    "kubeadm=1.11.3-*" \
+    "kubelet=1.11.3-*" \
+    "kubectl=1.11.3-*"
+
 fi
-
-if [ ! -x "/usr/bin/vagrant" ]
-then
-  echo "Installing vagrant and associated tools..."
-
-  VAGRANT_VERSION="2.1.5"
-  VAGRANT_SHA256SUM="458b1804b61443cc39ce1fe9ef9aca53c403f25c36f98d0f15e1b284f2bddb65"  # version 2.1.5
-  curl -o /tmp/vagrant.deb https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb
-  echo "$VAGRANT_SHA256SUM  /tmp/vagrant.deb" | sha256sum -c -
-  sudo dpkg -i /tmp/vagrant.deb
-fi
-
-echo "Installing vagrant plugins if needed..."
-VAGRANT_LIBVIRT_VERSION="0.0.43"
-vagrant plugin list | grep -q vagrant-libvirt || vagrant plugin install vagrant-libvirt --plugin-version ${VAGRANT_LIBVIRT_VERSION}
-vagrant plugin list | grep -q vagrant-mutate || vagrant plugin install vagrant-mutate
-
-echo "Obtaining libvirt image of Ubuntu"
-UBUNTU_VERSION=${UBUNTU_VERSION:-bento/ubuntu-16.04}
-vagrant box list | grep "${UBUNTU_VERSION}" | grep virtualbox || vagrant box add --provider virtualbox "${UBUNTU_VERSION}"
-vagrant box list | grep "${UBUNTU_VERSION}" | grep libvirt || vagrant mutate "${UBUNTU_VERSION}" libvirt --input-provider virtualbox
-
-
-if [ ! -x "/usr/local/bin/kubectl" ]
-then
-  echo "Installing kubectl..."
-
-  # install kubectl
-  KUBECTL_VERSION="1.11.3"
-  KUBECTL_SHA256SUM="0d4c70484e90d4310f03f997b4432e0a97a7f5b5be5c31d281f3d05919f8b46c"
-  curl -L -o /tmp/kubectl "https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-  echo "$KUBECTL_SHA256SUM  /tmp/kubectl" | sha256sum -c -
-  sudo cp /tmp/kubectl /usr/local/bin/kubectl
-  sudo chmod a+x /usr/local/bin/kubectl
-  rm -f /tmp/kubectl
-fi
-
 
 if [ ! -x "/usr/local/bin/helm" ]
 then
@@ -219,22 +211,26 @@ then
   rm -f minikube.deb
 fi
 
-
-if [ ! -x "/usr/local/bin/crictl" ]
+if [ ! -x "/usr/bin/vagrant" ]
 then
-  echo "Installing crictl..."
+  echo "Installing vagrant and associated tools..."
 
-  CRICTL_VERSION="1.11.1"
-  CRICTL_SHA256SUM="ccf83574556793ceb01717dc91c66b70f183c60c2bbec70283939aae8fdef768"
-  CRICTL_PLATFORM="linux-amd64"
-  curl -L -o /tmp/crictl.tgz "https://github.com/kubernetes-sigs/cri-tools/releases/download/v${CRICTL_VERSION}/crictl-v${CRICTL_VERSION}-${CRICTL_PLATFORM}.tar.gz"
-  echo "$CRICTL_SHA256SUM  /tmp/crictl.tgz" | sha256sum -c -
-  pushd /tmp
-  tar -xzvf crictl.tgz
-  sudo cp crictl /usr/local/bin/crictl
-  rm -rf crictl.tgz
-  popd
+  VAGRANT_VERSION="2.1.5"
+  VAGRANT_SHA256SUM="458b1804b61443cc39ce1fe9ef9aca53c403f25c36f98d0f15e1b284f2bddb65"  # version 2.1.5
+  curl -o /tmp/vagrant.deb https://releases.hashicorp.com/vagrant/${VAGRANT_VERSION}/vagrant_${VAGRANT_VERSION}_x86_64.deb
+  echo "$VAGRANT_SHA256SUM  /tmp/vagrant.deb" | sha256sum -c -
+  sudo dpkg -i /tmp/vagrant.deb
 fi
+
+echo "Installing vagrant plugins if needed..."
+VAGRANT_LIBVIRT_VERSION="0.0.43"
+vagrant plugin list | grep -q vagrant-libvirt || vagrant plugin install vagrant-libvirt --plugin-version ${VAGRANT_LIBVIRT_VERSION}
+vagrant plugin list | grep -q vagrant-mutate || vagrant plugin install vagrant-mutate
+
+echo "Obtaining libvirt image of Ubuntu"
+UBUNTU_VERSION=${UBUNTU_VERSION:-bento/ubuntu-16.04}
+vagrant box list | grep "${UBUNTU_VERSION}" | grep virtualbox || vagrant box add --provider virtualbox "${UBUNTU_VERSION}"
+vagrant box list | grep "${UBUNTU_VERSION}" | grep libvirt || vagrant mutate "${UBUNTU_VERSION}" libvirt --input-provider virtualbox
 
 
 echo "DONE!"
