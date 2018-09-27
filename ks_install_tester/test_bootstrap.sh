@@ -58,13 +58,17 @@ function cloudlab_setup() {
     fi
   fi
 
-  for DIR in docker kubelet openstack-helm nova
+  # precreate this for the images symlink
+  mkdir -p /var/lib/libvirt
+  rm -rf /var/lib/libvirt/images
+
+  for DIR in docker kubelet openstack-helm nova libvirt/images
   do
-      sudo mkdir -p /mnt/extra/$DIR
-      sudo chmod -R a+rwx /mnt/extra/$DIR
-      if [ ! -e /var/lib/$DIR ]
+      sudo mkdir -p "/mnt/extra/$DIR"
+      sudo chmod -R a+rwx "/mnt/extra/$DIR"
+      if [ ! -e "/var/lib/$DIR" ]
       then
-          sudo ln -s /mnt/extra/$DIR /var/lib/$DIR
+          sudo ln -s "/mnt/extra/$DIR" "/var/lib/$DIR"
       fi
   done
 }
