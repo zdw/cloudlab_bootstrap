@@ -59,8 +59,8 @@ function cloudlab_setup() {
   fi
 
   # precreate this for the images symlink
-  mkdir -p /var/lib/libvirt
-  rm -rf /var/lib/libvirt/images
+  sudo mkdir -p /var/lib/libvirt
+  sudo rm -rf /var/lib/libvirt/images
 
   for DIR in docker kubelet openstack-helm nova libvirt/images
   do
@@ -76,7 +76,7 @@ function cloudlab_setup() {
 echo "Installing prereqs..."
 sudo apt-get update
 sudo apt-get -y install apt-transport-https build-essential curl git python-dev \
-                        python-pip software-properties-common sshpass \
+                        python-pip software-properties-common sshpass libffi-dev \
                         qemu-kvm libvirt-bin libvirt-dev nfs-kernel-server socat
 
 
@@ -85,6 +85,7 @@ echo "Install ansible and python modules"
 sudo apt-get --auto-remove --yes remove python-openssl
 pip install gitpython graphviz docker "Jinja2>=2.9" virtualenv ansible \
             ansible-modules-hashivault netaddr PyOpenSSL flake8 yamllint
+
 
 # create mounts/directories before installing docker
 cloudlab_setup
@@ -185,8 +186,8 @@ then
   echo "Installing helm..."
 
   # install helm
-  HELM_VERSION="2.10.0"
-  HELM_SHA256SUM="0fa2ed4983b1e4a3f90f776d08b88b0c73fd83f305b5b634175cb15e61342ffe"
+  HELM_VERSION="2.11.0"
+  HELM_SHA256SUM="02a4751586d6a80f6848b58e7f6bd6c973ffffadc52b4c06652db7def02773a1"
   HELM_PLATFORM="linux-amd64"
   curl -L -o /tmp/helm.tgz "https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION}-${HELM_PLATFORM}.tar.gz"
   echo "$HELM_SHA256SUM  /tmp/helm.tgz" | sha256sum -c -
@@ -205,9 +206,9 @@ if [ ! -x "/usr/local/bin/minikube" ]
 then
   echo "Installing minikube..."
 
-  MINIKUBE_VERSION="0.28.2"
+  MINIKUBE_VERSION="0.29.0"
   MINIKUBE_DEB_VERSION="$(echo ${MINIKUBE_VERSION} | sed -n 's/\(.*\)\.\(.*\)/\1-\2/p')"
-  MINIKUBE_SHA256SUM="47cd2db6a65b092a3e1ac47ddd4331914290f04069260ee273530ab7e29123d2"
+  MINIKUBE_SHA256SUM="7513e963fdb12b86bf80ae0eb17e9eeb8c03d23bb9d6b99c8cbcd611a7fb8c1e"
   curl -L -o /tmp/minikube.deb "https://storage.googleapis.com/minikube/releases/v${MINIKUBE_VERSION}/minikube_${MINIKUBE_DEB_VERSION}.deb"
   echo "$MINIKUBE_SHA256SUM  /tmp/minikube.deb" | sha256sum -c -
   pushd /tmp
