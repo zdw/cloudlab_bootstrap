@@ -183,9 +183,9 @@ fi
 
 if [ ! -x "/usr/local/bin/helm" ]
 then
+  # from: https://github.com/helm/helm/releases
   echo "Installing helm..."
 
-  # install helm
   HELM_VERSION="2.11.0"
   HELM_SHA256SUM="02a4751586d6a80f6848b58e7f6bd6c973ffffadc52b4c06652db7def02773a1"
   HELM_PLATFORM="linux-amd64"
@@ -204,11 +204,12 @@ fi
 
 if [ ! -x "/usr/local/bin/minikube" ]
 then
+  # from: https://github.com/kubernetes/minikube/releases
   echo "Installing minikube..."
 
-  MINIKUBE_VERSION="0.29.0"
+  MINIKUBE_VERSION="0.30.0"
   MINIKUBE_DEB_VERSION="$(echo ${MINIKUBE_VERSION} | sed -n 's/\(.*\)\.\(.*\)/\1-\2/p')"
-  MINIKUBE_SHA256SUM="7513e963fdb12b86bf80ae0eb17e9eeb8c03d23bb9d6b99c8cbcd611a7fb8c1e"
+  MINIKUBE_SHA256SUM="c6c5aa5956f8ad5f61d426e9b8601ba95965a9c30bb80a9fe7525c64e6dd12fd"
   curl -L -o /tmp/minikube.deb "https://storage.googleapis.com/minikube/releases/v${MINIKUBE_VERSION}/minikube_${MINIKUBE_DEB_VERSION}.deb"
   echo "$MINIKUBE_SHA256SUM  /tmp/minikube.deb" | sha256sum -c -
   pushd /tmp
