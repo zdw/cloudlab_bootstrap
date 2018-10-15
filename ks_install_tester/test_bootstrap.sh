@@ -101,7 +101,7 @@ then
          stable"
 
   sudo apt-get update
-  sudo apt-get install -y "docker-ce=17.03*"
+  sudo apt-get install -y "docker-ce=17.06*"
 fi
 
 if [ ! -e "${HOME}/.gitconfig" ]
@@ -179,6 +179,9 @@ EOF
     "kubelet=1.11.3-*" \
     "kubectl=1.11.3-*"
 
+  # enable kubectl bash completion
+  echo "source <(kubectl completion bash)" >> ~/.bashrc
+
 fi
 
 if [ ! -x "/usr/local/bin/helm" ]
@@ -200,6 +203,8 @@ then
 
   helm init --client-only
   helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+
+  echo "source <(helm completion bash)" >> ~/.bashrc
 fi
 
 if [ ! -x "/usr/local/bin/minikube" ]
